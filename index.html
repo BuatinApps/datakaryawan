@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Data Karyawan (Fix Edit/Hapus & Tabel)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom CSS untuk styling tambahan atau override Tailwind */
+        .dashboard-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            display: none; /* Default hidden */
+        }
+
+        .dashboard-section.active {
+            opacity: 1;
+            transform: translateY(0);
+            display: block; /* Show active section */
+        }
+
+        /* Sidebar active link */
+        .active-link {
+            background-color: #4a5568; /* Tailwind gray-700 */
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        /* Gaya untuk cetak slip gaji */
+        @media print {
+            /* Sembunyikan elemen non-cetak */
+            body > *:not(#printWindowContent) { /* ID baru untuk target cetak */
+                display: none !important;
+            }
+            html, body {
+                height: auto; /* Allow content to dictate height */
+                overflow: hidden; /* Prevent scrollbars in print preview */
+            }
+            #printWindowContent {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 10mm; /* Margin yang lebih kecil untuk cetak */
+                background-color: white;
+                color: black;
+                font-family: sans-serif; /* Pastikan font yang sama untuk cetak */
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Atur ukuran font untuk cetak agar lebih rapi */
+            #printWindowContent p, #printWindowContent h3, #printWindowContent span, #printWindowContent strong, #printWindowContent table {
+                font-size: 11pt; /* Font yang lebih kecil untuk cetak */
+            }
+            #printWindowContent h2 {
+                font-size: 16pt;
+            }
+            #printWindowContent .text-3xl { font-size: 1.5rem; } /* Override Tailwind for smaller print size */
+            #printWindowContent .text-2xl { font-size: 1.25rem; }
+            #printWindowContent .text-xl { font-size: 1.1rem; }
+            #printWindowContent .p-6 { padding: 1rem; } /* Kurangi padding di cetak */
+            #printWindowContent .mb-6 { margin-bottom: 1rem; }
+            #printWindowContent .my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+
+            /* Pastikan background dan shadow hilang saat cetak */
+            #printWindowContent #invoiceOutput {
+                background-color: white !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            #printWindowContent #invoiceOutput > div:first-child { /* Hapus background gradient */
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <div class="flex h-screen">
+        <aside class="w-64 bg-gray-800 text-white p-6 shadow-lg">
+            <div class="text-2xl font-bold mb-8 text-center">HR Dashboard</div>
+            <nav>
+                <ul>
+                    <li class="mb-4">
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700 active-link" data-section="dashboard">
+                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="karyawan">
+                            <i class="fas fa-users mr-3"></i> Data Karyawan
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="absensi">
+                            <i class="fas fa-clipboard-check mr-3"></i> Absensi Kehadiran
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="gaji">
+                            <i class="fas fa-money-bill-wave mr-3"></i> Gaji Karyawan
+                        </a>
+                    </li>
+                    <li class="mb-4">
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="cuti">
+                            <i class="fas fa-calendar-alt mr-3"></i> Izin Libur / Cuti
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="invoice">
+                            <i class="fas fa-file-invoice-dollar mr-3"></i> Buat Slip Gaji
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-8 overflow-y-auto">
+            <section id="dashboard" class="dashboard-section active">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Dashboard Karyawan</h1>
+                <p class="text-gray-600 mb-8">Selamat datang di dashboard manajemen data karyawan.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Total Karyawan</p>
+                            <p class="text-3xl font-bold text-gray-900" id="totalKaryawan">0</p>
+                        </div>
+                        <i class="fas fa-users text-4xl text-blue-500"></i>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Kehadiran Hari Ini</p>
+                            <p class="text-3xl font-bold text-gray-900" id="kehadiranHariIni">0</p>
+                        </div>
+                        <i class="fas fa-clipboard-check text-4xl text-green-500"></i>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Permintaan Cuti Pending</p>
+                            <p class="text-3xl font-bold text-gray-900" id="permintaanCuti">0</p>
+                        </div>
+                        <i class="fas fa-calendar-alt text-4xl text-orange-500"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ringkasan Pengeluaran Gaji Bulanan</h2>
+                    <div class="mb-4 flex flex-wrap items-center space-x-0 md:space-x-4 space-y-2 md:space-y-0">
+                        <label for="bulanPengeluaran" class="block text-gray-700 text-sm font-bold w-full md:w-auto">Pilih Bulan:</label>
+                        <input type="month" id="bulanPengeluaran" class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-full md:w-auto">
+                        <button id="hitungPengeluaranBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto">Hitung</button>
+                    </div>
+                    <p class="text-gray-600 text-lg mb-2">Total Gaji Bersih Karyawan untuk bulan <span id="bulanGajiTotalText" class="font-semibold"></span>:</p>
+                    <p class="text-4xl font-bold text-green-700">Rp <span id="totalGajiBersihBulanIni">0</span></p>
+                    <p class="text-gray-500 text-sm mt-2">*(Simulasi: Total gaji bersih semua karyawan. Absensi tidak mempengaruhi perhitungan ini.)</p>
+                </div>
+            </section>
+
+            <section id="karyawan" class="dashboard-section hidden">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Data Karyawan</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4" id="karyawanFormTitle">Tambah Karyawan Baru</h2>
+                    <form id="karyawanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="hidden" id="karyawanIndex">
+                        <div>
+                            <label for="namaKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Nama:</label>
+                            <input type="text" id="namaKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div>
+                            <label for="jabatanKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Jabatan/Posisi:</label>
+                            <input type="text" id="jabatanKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="alamatKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Alamat:</label>
+                            <textarea id="alamatKaryawan" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                        </div>
+                        <div>
+                            <label for="noHpKaryawan" class="block text-gray-700 text-sm font-bold mb-2">No. HP:</label>
+                            <input type="tel" id="noHpKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="emailKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                            <input type="email" id="emailKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="tanggalMasukKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Masuk Kerja:</label>
+                            <input type="date" id="tanggalMasukKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="gajiPokokKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Gaji Pokok:</label>
+                            <input type="number" id="gajiPokokKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="tunjanganKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tunjangan:</label>
+                            <input type="number" id="tunjanganKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="potonganBPJSKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan BPJS:</label>
+                            <input type="number" id="potonganBPJSKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="potonganLainKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan Lain-lain:</label>
+                            <input type="number" id="potonganLainKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="md:col-span-2 mt-4 text-right">
+                            <button type="button" id="resetKaryawanFormBtn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Reset Form</button>
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Simpan Data Karyawan</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Daftar Karyawan</h2>
+                    <button id="exportKaryawanBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4">
+                        <i class="fas fa-file-excel mr-2"></i> Export Data (CSV)
+                    </button>
+                    <input type="text" id="searchInput" placeholder="Cari karyawan..." class="mb-4 p-2 border border-gray-300 rounded w-full md:w-1/3 float-right clear-both">
+                    <div class="overflow-x-auto clear-both">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                    <th class="py-3 px-6 text-left">Nama</th>
+                                    <th class="py-3 px-6 text-left">Jabatan/Posisi</th>
+                                    <th class="py-3 px-6 text-left">Alamat</th>
+                                    <th class="py-3 px-6 text-left">No. HP</th>
+                                    <th class="py-3 px-6 text-left">Email</th>
+                                    <th class="py-3 px-6 text-left">Tgl. Masuk</th>
+                                    <th class="py-3 px-6 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 text-sm font-light" id="karyawanTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="absensi" class="dashboard-section hidden">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Absensi Kehadiran</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-gray-600">Bagian ini akan menampilkan data absensi kehadiran karyawan.</p>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="absensiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                            <select id="absensiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                </select>
+                        </div>
+                        <div>
+                            <label for="tanggalAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Tanggal:</label>
+                            <input type="date" id="tanggalAbsensi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="statusAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
+                            <select id="statusAbsensi" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                <option value="Hadir">Hadir</option>
+                                <option value="Tidak Hadir">Tidak Hadir</option>
+                                <option value="Izin">Izin</option>
+                                <option value="Sakit">Sakit</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                             <button id="recordAbsensiBtn" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Catat Absensi</button>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-2">Riwayat Absensi</h3>
+                        <div id="absensiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
+                            <p class="text-gray-500">Belum ada riwayat absensi.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="gaji" class="dashboard-section hidden">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Gaji Karyawan</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-gray-600">Bagian ini akan menampilkan informasi gaji per bulan untuk setiap karyawan.</p>
+                    <div class="overflow-x-auto mt-4">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                    <th class="py-3 px-6 text-left">Nama</th>
+                                    <th class="py-3 px-6 text-left">Jabatan</th>
+                                    <th class="py-3 px-6 text-left">Gaji Pokok</th>
+                                    <th class="py-3 px-6 text-left">Tunjangan</th>
+                                    <th class="py-3 px-6 text-left">Potongan BPJS</th>
+                                    <th class="py-3 px-6 text-left">Potongan Lain</th>
+                                    <th class="py-3 px-6 text-left">Gaji Bersih</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-600 text-sm font-light" id="gajiTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="cuti" class="dashboard-section hidden">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Izin Libur / Cuti</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-gray-600">Bagian ini akan mengelola permintaan dan riwayat izin libur atau cuti karyawan.</p>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="cutiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                            <select id="cutiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                </select>
+                        </div>
+                        <div>
+                            <label for="tanggalMulaiCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai:</label>
+                            <input type="date" id="tanggalMulaiCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div>
+                            <label for="tanggalAkhirCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Akhir:</label>
+                            <input type="date" id="tanggalAkhirCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="alasanCuti" class="block text-gray-700 text-sm font-bold mb-2">Alasan:</label>
+                            <textarea id="alasanCuti" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <button id="ajukanCutiBtn" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Ajukan Cuti</button>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-2">Riwayat Permintaan Cuti</h3>
+                        <div id="cutiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
+                            <p class="text-gray-500">Belum ada riwayat cuti.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="invoice" class="dashboard-section hidden">
+                <h1 class="text-4xl font-bold text-gray-800 mb-6">Buat Slip Gaji</h1>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-gray-600 mb-4 no-print">Pilih karyawan dan bulan untuk membuat slip gaji.</p>
+                    <div class="mb-4 no-print grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="invoiceKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                            <select id="invoiceKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                </select>
+                        </div>
+                        <div>
+                            <label for="bulanGaji" class="block text-gray-700 text-sm font-bold mb-2">Bulan Gaji:</label>
+                            <input type="month" id="bulanGaji" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="md:col-span-2">
+                             <button id="generateInvoiceBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Buat Slip Gaji</button>
+                        </div>
+                    </div>
+
+                    <div id="printArea" class="hidden mt-8">
+                        <div id="invoiceOutput" class="p-6 border-2 border-blue-400 rounded-lg shadow-xl bg-white relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-50 opacity-50 z-0"></div>
+                            <div class="relative z-10">
+                                <h2 class="text-3xl font-extrabold text-blue-800 mb-2 text-center border-b-2 border-blue-300 pb-2">SLIP GAJI KARYAWAN</h2>
+                                <p class="text-sm text-gray-500 text-center mb-6">Tanggal Cetak: <span id="invoiceTanggalCetak"></span></p>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div>
+                                        <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Nama</strong> : <span id="invoiceNama" class="font-medium text-gray-900"></span></p>
+                                        <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Jabatan</strong> : <span id="invoiceJabatan" class="font-medium text-gray-900"></span></p>
+                                        <p class="text-gray-700"><strong class="w-24 inline-block font-semibold">Bulan Gaji</strong> : <span id="invoiceBulan" class="font-medium text-gray-900"></span></p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-gray-700 mb-1"><strong class="font-semibold">No. HP</strong>: <span id="invoiceNoHp"></span></p>
+                                        <p class="text-gray-700 mb-1"><strong class="font-semibold">Email</strong>: <span id="invoiceEmail"></span></p>
+                                        <p class="text-gray-700"><strong class="font-semibold">Tanggal Masuk</strong>: <span id="invoiceTanggalMasuk"></span></p>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4 border-t-2 border-blue-200">
+
+                                <div class="mb-6 bg-blue-50 p-4 rounded-md">
+                                    <h3 class="text-xl font-bold text-blue-700 mb-3 border-b border-blue-200 pb-2">Penghasilan</h3>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <p class="text-gray-700"><strong class="font-medium">Gaji Pokok</strong></p>
+                                        <p class="font-semibold text-gray-900">Rp <span id="invoiceGajiPokok"></span></p>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-gray-700"><strong class="font-medium">Tunjangan</strong></p>
+                                        <p class="font-semibold text-gray-900">Rp <span id="invoiceTunjangan"></span></p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-6 bg-red-50 p-4 rounded-md">
+                                    <h3 class="text-xl font-bold text-red-700 mb-3 border-b border-red-200 pb-2">Potongan</h3>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <p class="text-gray-700"><strong class="font-medium">Potongan BPJS</strong></p>
+                                        <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganBPJS">0</span></p>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-gray-700"><strong class="font-medium">Potongan Lain-lain</strong></p>
+                                        <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganLain">0</span></p>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4 border-t-4 border-blue-400">
+
+                                <div class="text-right bg-blue-600 text-white p-4 rounded-md">
+                                    <h3 class="text-2xl font-bold">Gaji Bersih: Rp <span id="invoiceGajiBersih"></span></h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-6 no-print">
+                            <button id="printInvoiceBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cetak Slip Gaji</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('nav ul li a');
+            const sections = document.querySelectorAll('.dashboard-section');
+            const karyawanTableBody = document.getElementById('karyawanTableBody');
+            const absensiKaryawanSelect = document.getElementById('absensiKaryawanSelect');
+            const cutiKaryawanSelect = document.getElementById('cutiKaryawanSelect');
+            const invoiceKaryawanSelect = document.getElementById('invoiceKaryawanSelect');
+            const gajiTableBody = document.getElementById('gajiTableBody');
+            const searchInput = document.getElementById('searchInput');
+            const generateInvoiceBtn = document.getElementById('generateInvoiceBtn');
+            const invoiceOutput = document.getElementById('invoiceOutput');
+            const printInvoiceBtn = document.getElementById('printInvoiceBtn');
+            const printArea = document.getElementById('printArea'); // Ambil elemen printArea
+
+            // Dashboard Total Pengeluaran
+            const bulanPengeluaranInput = document.getElementById('bulanPengeluaran');
+            const hitungPengeluaranBtn = document.getElementById('hitungPengeluaranBtn');
+            const bulanGajiTotalText = document.getElementById('bulanGajiTotalText');
+            const totalGajiBersihBulanIni = document.getElementById('totalGajiBersihBulanIni');
+
+            // === Karyawan Form Elements ===
+            const karyawanForm = document.getElementById('karyawanForm');
+            const karyawanFormTitle = document.getElementById('karyawanFormTitle');
+            const karyawanIndexInput = document.getElementById('karyawanIndex');
+            const resetKaryawanFormBtn = document.getElementById('resetKaryawanFormBtn');
+
+            // Form Inputs (pastikan ID ini sesuai dengan HTML)
+            const inputNamaKaryawan = document.getElementById('namaKaryawan');
+            const inputJabatanKaryawan = document.getElementById('jabatanKaryawan');
+            const inputAlamatKaryawan = document.getElementById('alamatKaryawan');
+            const inputNoHpKaryawan = document.getElementById('noHpKaryawan');
+            const inputEmailKaryawan = document.getElementById('emailKaryawan');
+            const inputTanggalMasukKaryawan = document.getElementById('tanggalMasukKaryawan');
+            const inputGajiPokokKaryawan = document.getElementById('gajiPokokKaryawan');
+            const inputTunjanganKaryawan = document.getElementById('tunjanganKaryawan');
+            const inputPotonganBPJSKaryawan = document.getElementById('potonganBPJSKaryawan');
+            const inputPotonganLainKaryawan = document.getElementById('potonganLainKaryawan');
+
+            const exportKaryawanBtn = document.getElementById('exportKaryawanBtn');
+
+            // Data Karyawan (Dimulai dengan data dummy, bisa dihapus)
+            let karyawanData = []; 
+            karyawanData.push({
+                nama: "Ani",
+                jabatan: "Manager Pemasaran",
+                alamat: "Jl. Merdeka No. 1, Jakarta",
+                noHp: "081234567890",
+                email: "ani@example.com",
+                tanggalMasuk: "2020-01-15",
+                gajiPokok: 7000000,
+                tunjangan: 1500000,
+                potonganBPJS: 100000, 
+                potonganLain: 100000 
+            });
+            karyawanData.push({
+                nama: "Budi",
+                jabatan: "Staf Akuntansi",
+                alamat: "Jl. Kebon Jeruk No. 5, Bandung",
+                noHp: "081298765432",
+                email: "budi@example.com",
+                tanggalMasuk: "2021-03-01",
+                gajiPokok: 5000000,
+                tunjangan: 1000000,
+                potonganBPJS: 75000,
+                potonganLain: 75000
+            });
+
+            // Data Absensi
+            let absensiData = [];
+
+            // Data Cuti
+            let cutiData = [];
+
+            // Fungsi untuk memperbarui metrik di bagian Dashboard
+            const updateDashboardMetrics = () => {
+                document.getElementById('totalKaryawan').textContent = karyawanData.length;
+                
+                const today = new Date().toISOString().slice(0, 10);
+                const kehadiranHariIniCount = absensiData.filter(abs => abs.tanggal === today && abs.status === 'Hadir').length;
+                document.getElementById('kehadiranHariIni').textContent = kehadiranHariIniCount;
+
+                const permintaanCutiPendingCount = cutiData.filter(c => c.status === 'Pending').length;
+                document.getElementById('permintaanCuti').textContent = permintaanCutiPendingCount;
+
+                hitungTotalPengeluaranGaji();
+            };
+
+            // Fungsi untuk menampilkan/menyembunyikan section
+            const showSection = (sectionId) => {
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    section.classList.add('hidden');
+                });
+                document.getElementById(sectionId).classList.add('active');
+                document.getElementById(sectionId).classList.remove('hidden');
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active-link');
+                });
+                document.querySelector(`[data-section="${sectionId}"]`).classList.add('active-link');
+                
+                if (sectionId === 'karyawan') {
+                    renderKaryawanTable(karyawanData);
+                    resetKaryawanForm();
+                } else if (sectionId === 'absensi') {
+                    populateKaryawanSelect(absensiKaryawanSelect);
+                    renderAbsensiRiwayat();
+                } else if (sectionId === 'gaji') {
+                    renderGajiTable();
+                } else if (sectionId === 'cuti') {
+                    populateKaryawanSelect(cutiKaryawanSelect);
+                    renderCutiRiwayat();
+                } else if (sectionId === 'invoice') {
+                    printArea.classList.add('hidden');
+                    populateKaryawanSelect(invoiceKaryawanSelect);
+                } else if (sectionId === 'dashboard') {
+                    hitungTotalPengeluaranGaji();
+                }
+                updateDashboardMetrics();
+            };
+
+            // Fungsi untuk menghitung total pengeluaran gaji bersih bulanan
+            const hitungTotalPengeluaranGaji = () => {
+                const selectedMonth = bulanPengeluaranInput.value;
+                const [year, month] = selectedMonth.split('-');
+                const monthName = new Date(year, parseInt(month) - 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                
+                bulanGajiTotalText.textContent = monthName;
+
+                let totalGaji = 0;
+                karyawanData.forEach(karyawan => {
+                    const gajiBersih = karyawan.gajiPokok + karyawan.tunjangan - karyawan.potonganBPJS - karyawan.potonganLain;
+                    totalGaji += gajiBersih;
+                });
+                totalGajiBersihBulanIni.textContent = totalGaji.toLocaleString('id-ID');
+            };
+
+            // Event listener untuk tombol Hitung Pengeluaran di Dashboard
+            bulanPengeluaranInput.value = new Date().toISOString().slice(0, 7); // Set default month to current month
+            hitungPengeluaranBtn.addEventListener('click', hitungTotalPengeluaranGaji);
+            bulanPengeluaranInput.addEventListener('change', hitungTotalPengeluaranGaji);
+
+
+            // Inisialisasi awal saat halaman dimuat
+            updateDashboardMetrics();
+            showSection('dashboard');
+
+
+            // Event listener untuk navigasi sidebar
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = e.target.closest('a').dataset.section;
+                    showSection(sectionId);
+                });
+            });
+
+            // === Karyawan Section Functions ===
+
+            // Render Data Karyawan
+            const renderKaryawanTable = (data) => {
+                karyawanTableBody.innerHTML = ''; // Pastikan tabel dikosongkan sebelum diisi
+                if (data.length === 0) {
+                    karyawanTableBody.innerHTML = '<tr><td colspan="7" class="py-3 px-6 text-center text-gray-500">Belum ada data karyawan. Tambahkan yang baru di atas!</td></tr>';
+                    return;
+                }
+                data.forEach((karyawan, index) => {
+                    const row = karyawanTableBody.insertRow();
+                    row.innerHTML = `
+                        <td class="py-3 px-6 text-left whitespace-nowrap">${karyawan.nama}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.jabatan}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.alamat || '-'}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.noHp || '-'}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.email || '-'}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.tanggalMasuk || '-'}</td>
+                        <td class="py-3 px-6 text-center">
+                            <button class="bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded mr-2 edit-btn" data-index="${index}">Edit</button>
+                            <button class="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded delete-btn" data-index="${index}">Hapus</button>
+                        </td>
+                    `;
+                });
+                // Add event listeners to newly created buttons
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', handleEditKaryawan);
+                });
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', handleDeleteKaryawan);
+                });
+            };
+
+            // Reset Karyawan Form
+            const resetKaryawanForm = () => {
+                karyawanFormTitle.textContent = 'Tambah Karyawan Baru';
+                karyawanForm.reset();
+                karyawanIndexInput.value = '';
+            };
+
+            // Event listener untuk tombol Reset Form
+            resetKaryawanFormBtn.addEventListener('click', resetKaryawanForm);
+
+
+            // Handle Edit Karyawan (mengisi form di dashboard)
+            const handleEditKaryawan = (e) => {
+                const index = e.target.dataset.index;
+                const karyawan = karyawanData[index];
+                
+                karyawanFormTitle.textContent = 'Edit Data Karyawan';
+                karyawanIndexInput.value = index;
+
+                // Populate form fields
+                inputNamaKaryawan.value = karyawan.nama;
+                inputJabatanKaryawan.value = karyawan.jabatan;
+                inputAlamatKaryawan.value = karyawan.alamat;
+                inputNoHpKaryawan.value = karyawan.noHp;
+                inputEmailKaryawan.value = karyawan.email;
+                inputTanggalMasukKaryawan.value = karyawan.tanggalMasuk;
+                inputGajiPokokKaryawan.value = karyawan.gajiPokok;
+                inputTunjanganKaryawan.value = karyawan.tunjangan;
+                inputPotonganBPJSKaryawan.value = karyawan.potonganBPJS;
+                inputPotonganLainKaryawan.value = karyawan.potonganLain;
+
+                karyawanForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
+            // Handle Delete Karyawan Button Click
+            const handleDeleteKaryawan = (e) => {
+                const index = e.target.dataset.index;
+                const namaKaryawan = karyawanData[index].nama;
+                if (confirm(`Anda yakin ingin menghapus data karyawan ${namaKaryawan}?`)) {
+                    karyawanData.splice(index, 1);
+                    renderKaryawanTable(karyawanData);
+                    updateDashboardMetrics();
+                    populateKaryawanSelect(absensiKaryawanSelect);
+                    populateKaryawanSelect(cutiKaryawanSelect);
+                    populateKaryawanSelect(invoiceKaryawanSelect);
+                    alert('Data karyawan berhasil dihapus!');
+                    resetKaryawanForm();
+                }
+            };
+
+            // Handle Karyawan Form Submission
+            karyawanForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                if (!inputNamaKaryawan.value || !inputJabatanKaryawan.value) {
+                    alert('Nama dan Jabatan/Posisi wajib diisi!');
+                    return;
+                }
+
+                const index = karyawanIndexInput.value;
+                const newKaryawan = {
+                    nama: inputNamaKaryawan.value,
+                    jabatan: inputJabatanKaryawan.value,
+                    alamat: inputAlamatKaryawan.value,
+                    noHp: inputNoHpKaryawan.value,
+                    email: inputEmailKaryawan.value,
+                    tanggalMasuk: inputTanggalMasukKaryawan.value,
+                    gajiPokok: parseInt(inputGajiPokokKaryawan.value) || 0,
+                    tunjangan: parseInt(inputTunjanganKaryawan.value) || 0,
+                    potonganBPJS: parseInt(inputPotonganBPJSKaryawan.value) || 0,
+                    potonganLain: parseInt(inputPotonganLainKaryawan.value) || 0
+                };
+
+                if (index === '') {
+                    karyawanData.push(newKaryawan);
+                    alert('Karyawan baru berhasil ditambahkan!');
+                } else {
+                    karyawanData[parseInt(index)] = newKaryawan;
+                    alert('Data karyawan berhasil diperbarui!');
+                }
+
+                renderKaryawanTable(karyawanData);
+                updateDashboardMetrics();
+                populateKaryawanSelect(absensiKaryawanSelect);
+                populateKaryawanSelect(cutiKaryawanSelect);
+                populateKaryawanSelect(invoiceKaryawanSelect);
+                resetKaryawanForm();
+            });
+
+            // Filter Karyawan
+            searchInput.addEventListener('keyup', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredKaryawan = karyawanData.filter(karyawan =>
+                    karyawan.nama.toLowerCase().includes(searchTerm) ||
+                    karyawan.jabatan.toLowerCase().includes(searchTerm) ||
+                    karyawan.email.toLowerCase().includes(searchTerm)
+                );
+                renderKaryawanTable(filteredKaryawan);
+            });
+
+            // Export Karyawan Data to CSV
+            exportKaryawanBtn.addEventListener('click', () => {
+                if (karyawanData.length === 0) {
+                    alert('Tidak ada data karyawan untuk di-export.');
+                    return;
+                }
+
+                const headers = [
+                    "nama", "jabatan", "alamat", "noHp", "email", 
+                    "tanggalMasuk", "gajiPokok", "tunjangan", 
+                    "potonganBPJS", "potonganLain"
+                ].join(',');
+
+                const rows = karyawanData.map(k => {
+                    const values = [
+                        k.nama, k.jabatan, k.alamat || '', k.noHp || '', k.email || '',
+                        k.tanggalMasuk || '', k.gajiPokok || 0, k.tunjangan || 0,
+                        k.potonganBPJS || 0, k.potonganLain || 0
+                    ];
+                    return values.map(value => {
+                        return typeof value === 'string' && (value.includes(',') || value.includes('\n')) ? `"${value.replace(/"/g, '""')}"` : value;
+                    }).join(',');
+                });
+                
+                const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join('\n');
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', 'data_karyawan.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('Data karyawan berhasil di-export ke data_karyawan.csv');
+            });
+
+
+            // Populate Karyawan Select (untuk Absensi, Cuti, Invoice)
+            const populateKaryawanSelect = (selectElement) => {
+                selectElement.innerHTML = '<option value="">Pilih Karyawan</option>';
+                karyawanData.forEach(karyawan => {
+                    const option = document.createElement('option');
+                    option.value = karyawan.nama;
+                    option.textContent = karyawan.nama;
+                    selectElement.appendChild(option);
+                });
+            };
+
+            // Absensi Kehadiran
+            const recordAbsensiBtn = document.getElementById('recordAbsensiBtn');
+            const absensiRiwayatDiv = document.getElementById('absensiRiwayat');
+
+            const renderAbsensiRiwayat = () => {
+                if (absensiData.length === 0) {
+                    absensiRiwayatDiv.innerHTML = '<p class="text-gray-500">Belum ada riwayat absensi.</p>';
+                    return;
+                }
+                absensiRiwayatDiv.innerHTML = '';
+                const sortedAbsensi = [...absensiData].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+                sortedAbsensi.forEach(absensi => {
+                    const p = document.createElement('p');
+                    p.classList.add('text-gray-700', 'mb-1');
+                    let statusClass = '';
+                    if (absensi.status === 'Hadir') {
+                        statusClass = 'text-green-600';
+                    } else if (absensi.status === 'Tidak Hadir') {
+                        statusClass = 'text-red-600';
+                    } else if (absensi.status === 'Izin' || absensi.status === 'Sakit') {
+                        statusClass = 'text-orange-600';
+                    }
+                    p.innerHTML = `<strong>${absensi.namaKaryawan}</strong> - ${absensi.tanggal} - <span class="${statusClass}">${absensi.status}</span>`;
+                    absensiRiwayatDiv.appendChild(p);
+                });
+            };
+
+            recordAbsensiBtn.addEventListener('click', () => {
+                const namaKaryawan = absensiKaryawanSelect.value;
+                const tanggalAbsensi = document.getElementById('tanggalAbsensi').value;
+                const statusAbsensi = document.getElementById('statusAbsensi').value;
+
+                if (!namaKaryawan || !tanggalAbsensi || !statusAbsensi) {
+                    alert('Harap lengkapi semua field untuk absensi.');
+                    return;
+                }
+
+                const isDuplicate = absensiData.some(abs => abs.namaKaryawan === namaKaryawan && abs.tanggal === tanggalAbsensi);
+                if (isDuplicate) {
+                    alert('Absensi untuk karyawan ini pada tanggal yang sama sudah ada.');
+                    return;
+                }
+
+                absensiData.push({ namaKaryawan, tanggal: tanggalAbsensi, status: statusAbsensi });
+                renderAbsensiRiwayat();
+                updateDashboardMetrics();
+                alert('Absensi berhasil dicatat!');
+                absensiKaryawanSelect.value = '';
+                document.getElementById('tanggalAbsensi').value = '';
+                document.getElementById('statusAbsensi').value = 'Hadir';
+            });
+
+            // Gaji Karyawan
+            const renderGajiTable = () => {
+                gajiTableBody.innerHTML = '';
+                if (karyawanData.length === 0) {
+                    gajiTableBody.innerHTML = '<tr><td colspan="7" class="py-3 px-6 text-center text-gray-500">Belum ada data karyawan untuk gaji.</td></tr>';
+                    return;
+                }
+                karyawanData.forEach(karyawan => {
+                    const gajiBersih = karyawan.gajiPokok + karyawan.tunjangan - karyawan.potonganBPJS - karyawan.potonganLain;
+                    const row = gajiTableBody.insertRow();
+                    row.innerHTML = `
+                        <td class="py-3 px-6 text-left whitespace-nowrap">${karyawan.nama}</td>
+                        <td class="py-3 px-6 text-left">${karyawan.jabatan}</td>
+                        <td class="py-3 px-6 text-left">Rp ${karyawan.gajiPokok.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-6 text-left">Rp ${karyawan.tunjangan.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-6 text-left">Rp ${karyawan.potonganBPJS.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-6 text-left">Rp ${karyawan.potonganLain.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-6 text-left font-bold">Rp ${gajiBersih.toLocaleString('id-ID')}</td>
+                    `;
+                });
+            };
+
+            // Izin Libur / Cuti
+            const ajukanCutiBtn = document.getElementById('ajukanCutiBtn');
+            const cutiRiwayatDiv = document.getElementById('cutiRiwayat');
+
+            const renderCutiRiwayat = () => {
+                if (cutiData.length === 0) {
+                    cutiRiwayatDiv.innerHTML = '<p class="text-gray-500">Belum ada riwayat cuti.</p>';
+                    return;
+                }
+                cutiRiwayatDiv.innerHTML = '';
+                const sortedCuti = [...cutiData].sort((a, b) => new Date(b.tanggalMulai) - new Date(a.tanggalMulai));
+
+                sortedCuti.forEach((cuti, index) => {
+                    const p = document.createElement('p');
+                    p.classList.add('text-gray-700', 'mb-1', 'flex', 'items-center');
+                    let statusClass = 'text-yellow-600';
+                    let statusText = cuti.status;
+                    let actionButtons = '';
+
+                    if (cuti.status === 'Pending') {
+                        actionButtons = `
+                            <button class="bg-green-500 hover:bg-green-700 text-white text-xs font-bold py-1 px-2 rounded ml-2 approve-cuti-btn" data-index="${index}">Setujui</button>
+                            <button class="bg-red-500 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded ml-1 reject-cuti-btn" data-index="${index}">Tolak</button>
+                        `;
+                    } else if (cuti.status === 'Disetujui') {
+                        statusClass = 'text-green-600';
+                    } else if (cuti.status === 'Ditolak') {
+                        statusClass = 'text-red-600';
+                    }
+
+                    p.innerHTML = `<strong>${cuti.namaKaryawan}</strong> - ${cuti.tanggalMulai} s/d ${cuti.tanggalAkhir} (${cuti.alasan}) <span class="${statusClass} ml-2">(${statusText})</span> ${actionButtons}`;
+                    cutiRiwayatDiv.appendChild(p);
+                });
+
+                document.querySelectorAll('.approve-cuti-btn').forEach(button => {
+                    button.addEventListener('click', handleApproveCuti);
+                });
+                document.querySelectorAll('.reject-cuti-btn').forEach(button => {
+                    button.addEventListener('click', handleRejectCuti);
+                });
+            };
+
+            const handleApproveCuti = (e) => {
+                const index = e.target.dataset.index;
+                cutiData[index].status = 'Disetujui';
+                renderCutiRiwayat();
+                updateDashboardMetrics();
+                alert(`Pengajuan cuti ${cutiData[index].namaKaryawan} disetujui.`);
+            };
+
+            const handleRejectCuti = (e) => {
+                const index = e.target.dataset.index;
+                cutiData[index].status = 'Ditolak';
+                renderCutiRiwayat();
+                updateDashboardMetrics();
+                alert(`Pengajuan cuti ${cutiData[index].namaKaryawan} ditolak.`);
+            };
+
+
+            ajukanCutiBtn.addEventListener('click', () => {
+                const namaKaryawan = cutiKaryawanSelect.value;
+                const tanggalMulai = document.getElementById('tanggalMulaiCuti').value;
+                const tanggalAkhir = document.getElementById('tanggalAkhirCuti').value;
+                const alasan = document.getElementById('alasanCuti').value;
+
+                if (!namaKaryawan || !tanggalMulai || !tanggalAkhir || !alasan) {
+                    alert('Harap lengkapi semua field untuk pengajuan cuti.');
+                    return;
+                }
+
+                if (new Date(tanggalMulai) > new Date(tanggalAkhir)) {
+                    alert('Tanggal mulai cuti tidak boleh lebih dari tanggal akhir cuti.');
+                    return;
+                }
+                cutiData.push({ namaKaryawan, tanggalMulai, tanggalAkhir, alasan, status: 'Pending' });
+                renderCutiRiwayat();
+                updateDashboardMetrics();
+                alert('Pengajuan cuti berhasil!');
+                cutiKaryawanSelect.value = '';
+                document.getElementById('tanggalMulaiCuti').value = '';
+                document.getElementById('tanggalAkhirCuti').value = '';
+                document.getElementById('alasanCuti').value = '';
+            });
+
+            // Buat Slip Gaji (Invoice)
+            generateInvoiceBtn.addEventListener('click', () => {
+                const selectedKaryawanName = invoiceKaryawanSelect.value;
+                const bulanGajiInput = document.getElementById('bulanGaji').value;
+
+                if (!selectedKaryawanName || !bulanGajiInput) {
+                    alert('Pilih karyawan dan bulan gaji terlebih dahulu.');
+                    return;
+                }
+
+                const karyawan = karyawanData.find(k => k.nama === selectedKaryawanName);
+
+                if (karyawan) {
+                    const totalPotongan = karyawan.potonganBPJS + karyawan.potonganLain;
+                    const gajiBersih = karyawan.gajiPokok + karyawan.tunjangan - totalPotongan;
+                    
+                    const [year, month] = bulanGajiInput.split('-');
+                    const date = new Date(year, parseInt(month) - 1);
+                    const bulanTahun = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                    const tanggalCetak = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+
+                    document.getElementById('invoiceNama').textContent = karyawan.nama;
+                    document.getElementById('invoiceJabatan').textContent = karyawan.jabatan;
+                    document.getElementById('invoiceBulan').textContent = bulanTahun;
+                    document.getElementById('invoiceNoHp').textContent = karyawan.noHp || '-';
+                    document.getElementById('invoiceEmail').textContent = karyawan.email || '-';
+                    document.getElementById('invoiceTanggalMasuk').textContent = karyawan.tanggalMasuk || '-';
+                    document.getElementById('invoiceGajiPokok').textContent = karyawan.gajiPokok.toLocaleString('id-ID');
+                    document.getElementById('invoiceTunjangan').textContent = karyawan.tunjangan.toLocaleString('id-ID');
+                    document.getElementById('invoicePotonganBPJS').textContent = karyawan.potonganBPJS.toLocaleString('id-ID');
+                    document.getElementById('invoicePotonganLain').textContent = karyawan.potonganLain.toLocaleString('id-ID');
+                    document.getElementById('invoiceGajiBersih').textContent = gajiBersih.toLocaleString('id-ID');
+                    document.getElementById('invoiceTanggalCetak').textContent = tanggalCetak;
+
+
+                    printArea.classList.remove('hidden');
+                } else {
+                    alert('Data karyawan tidak ditemukan.');
+                    printArea.classList.add('hidden');
+                }
+            });
+
+            // Print Invoice
+            printInvoiceBtn.addEventListener('click', () => {
+                const invoiceContent = document.getElementById('invoiceOutput').cloneNode(true);
+                
+                const printWrapper = document.createElement('div');
+                printWrapper.id = 'printWindowContent';
+                printWrapper.appendChild(invoiceContent);
+
+                document.body.appendChild(printWrapper);
+                
+                window.print();
+                
+                document.body.removeChild(printWrapper);
+            });
+
+            // Inisialisasi awal saat halaman dimuat
+            updateDashboardMetrics();
+            // renderKaryawanTable(karyawanData); // Panggil ini saat showSection('karyawan')
+        });
+    </script>
+</body>
+</html>
