@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Data Karyawan (Fix Edit/Hapus & Tabel)</title>
+    <title>Dashboard Data Karyawan (Full Responsive)</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -27,10 +27,58 @@
             color: #fff;
             font-weight: bold;
         }
+
+        /* Responsive Sidebar Styles */
+        aside {
+            position: fixed; /* Make sidebar fixed for mobile overlay */
+            top: 0;
+            left: 0;
+            height: 100%;
+            transform: translateX(-100%); /* Hide sidebar by default on mobile */
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000; /* Ensure sidebar is on top */
+        }
+
+        aside.active {
+            transform: translateX(0); /* Show sidebar */
+        }
+
+        @media (min-width: 768px) { /* md breakpoint in Tailwind */
+            aside {
+                position: relative; /* Unfix sidebar on larger screens */
+                transform: translateX(0); /* Always show on desktop */
+                width: 16rem; /* w-64 */
+                flex-shrink: 0;
+            }
+            .main-content-wrapper {
+                margin-left: 16rem; /* Adjust main content margin for sidebar */
+            }
+            .sidebar-toggle-btn {
+                display: none; /* Hide toggle button on desktop */
+            }
+        }
+
+        /* Overlay for when sidebar is open on mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
         
         /* Gaya untuk cetak slip gaji */
         @media print {
-            /* Sembunyikan elemen non-cetak */
+            body {
+                margin: 0;
+                padding: 0;
+            }
             body > *:not(#printWindowContent) { /* ID baru untuk target cetak */
                 display: none !important;
             }
@@ -80,338 +128,343 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans flex"> <aside id="sidebar" class="w-64 bg-gray-800 text-white p-6 shadow-lg md:relative md:transform-none">
+        <div class="text-2xl font-bold mb-8 text-center">HR Dashboard</div>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700 active-link" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="karyawan">
+                        <i class="fas fa-users mr-3"></i> Data Karyawan
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="absensi">
+                        <i class="fas fa-clipboard-check mr-3"></i> Absensi Kehadiran
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="gaji">
+                        <i class="fas fa-money-bill-wave mr-3"></i> Gaji Karyawan
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="cuti">
+                        <i class="fas fa-calendar-alt mr-3"></i> Izin Libur / Cuti
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="invoice">
+                        <i class="fas fa-file-invoice-dollar mr-3"></i> Buat Slip Gaji
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
 
-    <div class="flex h-screen">
-        <aside class="w-64 bg-gray-800 text-white p-6 shadow-lg">
-            <div class="text-2xl font-bold mb-8 text-center">HR Dashboard</div>
-            <nav>
-                <ul>
-                    <li class="mb-4">
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700 active-link" data-section="dashboard">
-                            <i class="fas fa-tachometer-alt mr-3"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="mb-4">
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="karyawan">
-                            <i class="fas fa-users mr-3"></i> Data Karyawan
-                        </a>
-                    </li>
-                    <li class="mb-4">
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="absensi">
-                            <i class="fas fa-clipboard-check mr-3"></i> Absensi Kehadiran
-                        </a>
-                    </li>
-                    <li class="mb-4">
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="gaji">
-                            <i class="fas fa-money-bill-wave mr-3"></i> Gaji Karyawan
-                        </a>
-                    </li>
-                    <li class="mb-4">
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="cuti">
-                            <i class="fas fa-calendar-alt mr-3"></i> Izin Libur / Cuti
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="flex items-center py-2 px-4 rounded transition duration-200 hover:bg-gray-700" data-section="invoice">
-                            <i class="fas fa-file-invoice-dollar mr-3"></i> Buat Slip Gaji
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
-        <main class="flex-1 p-8 overflow-y-auto">
-            <section id="dashboard" class="dashboard-section active">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Dashboard Karyawan</h1>
-                <p class="text-gray-600 mb-8">Selamat datang di dashboard manajemen data karyawan.</p>
+    <main class="flex-1 p-8 overflow-y-auto">
+        <header class="bg-white shadow-md p-4 mb-6 flex items-center justify-between md:hidden sticky top-0 z-50">
+            <button id="sidebarToggleBtn" class="text-gray-800 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-xl font-bold text-gray-800">HR Dashboard</h1>
+        </header>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Total Karyawan</p>
-                            <p class="text-3xl font-bold text-gray-900" id="totalKaryawan">0</p>
-                        </div>
-                        <i class="fas fa-users text-4xl text-blue-500"></i>
+        <section id="dashboard" class="dashboard-section active">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Dashboard Karyawan</h1>
+            <p class="text-gray-600 mb-8">Selamat datang di dashboard manajemen data karyawan.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Karyawan</p>
+                        <p class="text-3xl font-bold text-gray-900" id="totalKaryawan">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Kehadiran Hari Ini</p>
-                            <p class="text-3xl font-bold text-gray-900" id="kehadiranHariIni">0</p>
-                        </div>
-                        <i class="fas fa-clipboard-check text-4xl text-green-500"></i>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p class="text-gray-500 text-sm">Permintaan Cuti Pending</p>
-                            <p class="text-3xl font-bold text-gray-900" id="permintaanCuti">0</p>
-                        </div>
-                        <i class="fas fa-calendar-alt text-4xl text-orange-500"></i>
-                    </div>
+                    <i class="fas fa-users text-4xl text-blue-500"></i>
                 </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ringkasan Pengeluaran Gaji Bulanan</h2>
-                    <div class="mb-4 flex flex-wrap items-center space-x-0 md:space-x-4 space-y-2 md:space-y-0">
-                        <label for="bulanPengeluaran" class="block text-gray-700 text-sm font-bold w-full md:w-auto">Pilih Bulan:</label>
-                        <input type="month" id="bulanPengeluaran" class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-full md:w-auto">
-                        <button id="hitungPengeluaranBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto">Hitung</button>
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Kehadiran Hari Ini</p>
+                        <p class="text-3xl font-bold text-gray-900" id="kehadiranHariIni">0</p>
                     </div>
-                    <p class="text-gray-600 text-lg mb-2">Total Gaji Bersih Karyawan untuk bulan <span id="bulanGajiTotalText" class="font-semibold"></span>:</p>
-                    <p class="text-4xl font-bold text-green-700">Rp <span id="totalGajiBersihBulanIni">0</span></p>
-                    <p class="text-gray-500 text-sm mt-2">*(Simulasi: Total gaji bersih semua karyawan. Absensi tidak mempengaruhi perhitungan ini.)</p>
+                    <i class="fas fa-clipboard-check text-4xl text-green-500"></i>
                 </div>
-            </section>
-
-            <section id="karyawan" class="dashboard-section hidden">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Data Karyawan</h1>
-                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4" id="karyawanFormTitle">Tambah Karyawan Baru</h2>
-                    <form id="karyawanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="hidden" id="karyawanIndex">
-                        <div>
-                            <label for="namaKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Nama:</label>
-                            <input type="text" id="namaKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-                        </div>
-                        <div>
-                            <label for="jabatanKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Jabatan/Posisi:</label>
-                            <input type="text" id="jabatanKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="alamatKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Alamat:</label>
-                            <textarea id="alamatKaryawan" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
-                        </div>
-                        <div>
-                            <label for="noHpKaryawan" class="block text-gray-700 text-sm font-bold mb-2">No. HP:</label>
-                            <input type="tel" id="noHpKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="emailKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
-                            <input type="email" id="emailKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="tanggalMasukKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Masuk Kerja:</label>
-                            <input type="date" id="tanggalMasukKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="gajiPokokKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Gaji Pokok:</label>
-                            <input type="number" id="gajiPokokKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="tunjanganKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tunjangan:</label>
-                            <input type="number" id="tunjanganKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="potonganBPJSKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan BPJS:</label>
-                            <input type="number" id="potonganBPJSKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="potonganLainKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan Lain-lain:</label>
-                            <input type="number" id="potonganLainKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div class="md:col-span-2 mt-4 text-right">
-                            <button type="button" id="resetKaryawanFormBtn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Reset Form</button>
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Simpan Data Karyawan</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Daftar Karyawan</h2>
-                    <button id="exportKaryawanBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4">
-                        <i class="fas fa-file-excel mr-2"></i> Export Data (CSV)
-                    </button>
-                    <input type="text" id="searchInput" placeholder="Cari karyawan..." class="mb-4 p-2 border border-gray-300 rounded w-full md:w-1/3 float-right clear-both">
-                    <div class="overflow-x-auto clear-both">
-                        <table class="min-w-full bg-white">
-                            <thead>
-                                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                                    <th class="py-3 px-6 text-left">Nama</th>
-                                    <th class="py-3 px-6 text-left">Jabatan/Posisi</th>
-                                    <th class="py-3 px-6 text-left">Alamat</th>
-                                    <th class="py-3 px-6 text-left">No. HP</th>
-                                    <th class="py-3 px-6 text-left">Email</th>
-                                    <th class="py-3 px-6 text-left">Tgl. Masuk</th>
-                                    <th class="py-3 px-6 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-gray-600 text-sm font-light" id="karyawanTableBody">
-                                </tbody>
-                        </table>
+                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Permintaan Cuti Pending</p>
+                        <p class="text-3xl font-bold text-gray-900" id="permintaanCuti">0</p>
                     </div>
+                    <i class="fas fa-calendar-alt text-4xl text-orange-500"></i>
                 </div>
-            </section>
+            </div>
 
-            <section id="absensi" class="dashboard-section hidden">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Absensi Kehadiran</h1>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <p class="text-gray-600">Bagian ini akan menampilkan data absensi kehadiran karyawan.</p>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="absensiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
-                            <select id="absensiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-                                </select>
-                        </div>
-                        <div>
-                            <label for="tanggalAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Tanggal:</label>
-                            <input type="date" id="tanggalAbsensi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="statusAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
-                            <select id="statusAbsensi" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-                                <option value="Hadir">Hadir</option>
-                                <option value="Tidak Hadir">Tidak Hadir</option>
-                                <option value="Izin">Izin</option>
-                                <option value="Sakit">Sakit</option>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ringkasan Pengeluaran Gaji Bulanan</h2>
+                <div class="mb-4 flex flex-wrap items-center space-x-0 md:space-x-4 space-y-2 md:space-y-0">
+                    <label for="bulanPengeluaran" class="block text-gray-700 text-sm font-bold w-full md:w-auto">Pilih Bulan:</label>
+                    <input type="month" id="bulanPengeluaran" class="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline w-full md:w-auto">
+                    <button id="hitungPengeluaranBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full md:w-auto">Hitung</button>
+                </div>
+                <p class="text-gray-600 text-lg mb-2">Total Gaji Bersih Karyawan untuk bulan <span id="bulanGajiTotalText" class="font-semibold"></span>:</p>
+                <p class="text-4xl font-bold text-green-700">Rp <span id="totalGajiBersihBulanIni">0</span></p>
+                <p class="text-gray-500 text-sm mt-2">*(Simulasi: Total gaji bersih semua karyawan. Absensi tidak mempengaruhi perhitungan ini.)</p>
+            </div>
+        </section>
+
+        <section id="karyawan" class="dashboard-section hidden">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Data Karyawan</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4" id="karyawanFormTitle">Tambah Karyawan Baru</h2>
+                <form id="karyawanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="karyawanIndex">
+                    <div>
+                        <label for="namaKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Nama:</label>
+                        <input type="text" id="namaKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div>
+                        <label for="jabatanKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Jabatan/Posisi:</label>
+                        <input type="text" id="jabatanKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="alamatKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Alamat:</label>
+                        <textarea id="alamatKaryawan" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                    </div>
+                    <div>
+                        <label for="noHpKaryawan" class="block text-gray-700 text-sm font-bold mb-2">No. HP:</label>
+                        <input type="tel" id="noHpKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="emailKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                        <input type="email" id="emailKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="tanggalMasukKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Masuk Kerja:</label>
+                        <input type="date" id="tanggalMasukKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="gajiPokokKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Gaji Pokok:</label>
+                        <input type="number" id="gajiPokokKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="tunjanganKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Tunjangan:</label>
+                        <input type="number" id="tunjanganKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="potonganBPJSKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan BPJS:</label>
+                        <input type="number" id="potonganBPJSKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="potonganLainKaryawan" class="block text-gray-700 text-sm font-bold mb-2">Potongan Lain-lain:</label>
+                        <input type="number" id="potonganLainKaryawan" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="md:col-span-2 mt-4 text-right">
+                        <button type="button" id="resetKaryawanFormBtn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Reset Form</button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Simpan Data Karyawan</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Daftar Karyawan</h2>
+                <button id="exportKaryawanBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4">
+                    <i class="fas fa-file-excel mr-2"></i> Export Data (CSV)
+                </button>
+                <input type="text" id="searchInput" placeholder="Cari karyawan..." class="mb-4 p-2 border border-gray-300 rounded w-full md:w-1/3 float-right clear-both">
+                <div class="overflow-x-auto clear-both">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Nama</th>
+                                <th class="py-3 px-6 text-left">Jabatan/Posisi</th>
+                                <th class="py-3 px-6 text-left">Alamat</th>
+                                <th class="py-3 px-6 text-left">No. HP</th>
+                                <th class="py-3 px-6 text-left">Email</th>
+                                <th class="py-3 px-6 text-left">Tgl. Masuk</th>
+                                <th class="py-3 px-6 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light" id="karyawanTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="absensi" class="dashboard-section hidden">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Absensi Kehadiran</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="text-gray-600">Bagian ini akan menampilkan data absensi kehadiran karyawan.</p>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="absensiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                        <select id="absensiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
                             </select>
-                        </div>
-                        <div class="md:col-span-2">
-                             <button id="recordAbsensiBtn" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Catat Absensi</button>
-                        </div>
                     </div>
-                    <div class="mt-6">
-                        <h3 class="text-xl font-semibold mb-2">Riwayat Absensi</h3>
-                        <div id="absensiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
-                            <p class="text-gray-500">Belum ada riwayat absensi.</p>
-                        </div>
+                    <div>
+                        <label for="tanggalAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Tanggal:</label>
+                        <input type="date" id="tanggalAbsensi" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                     </div>
-                </div>
-            </section>
-
-            <section id="gaji" class="dashboard-section hidden">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Gaji Karyawan</h1>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <p class="text-gray-600">Bagian ini akan menampilkan informasi gaji per bulan untuk setiap karyawan.</p>
-                    <div class="overflow-x-auto mt-4">
-                        <table class="min-w-full bg-white">
-                            <thead>
-                                <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                                    <th class="py-3 px-6 text-left">Nama</th>
-                                    <th class="py-3 px-6 text-left">Jabatan</th>
-                                    <th class="py-3 px-6 text-left">Gaji Pokok</th>
-                                    <th class="py-3 px-6 text-left">Tunjangan</th>
-                                    <th class="py-3 px-6 text-left">Potongan BPJS</th>
-                                    <th class="py-3 px-6 text-left">Potongan Lain</th>
-                                    <th class="py-3 px-6 text-left">Gaji Bersih</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-gray-600 text-sm font-light" id="gajiTableBody">
-                                </tbody>
-                        </table>
+                    <div>
+                        <label for="statusAbsensi" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
+                        <select id="statusAbsensi" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                            <option value="Hadir">Hadir</option>
+                            <option value="Tidak Hadir">Tidak Hadir</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Sakit">Sakit</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                         <button id="recordAbsensiBtn" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Catat Absensi</button>
                     </div>
                 </div>
-            </section>
-
-            <section id="cuti" class="dashboard-section hidden">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Izin Libur / Cuti</h1>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <p class="text-gray-600">Bagian ini akan mengelola permintaan dan riwayat izin libur atau cuti karyawan.</p>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="cutiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
-                            <select id="cutiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-                                </select>
-                        </div>
-                        <div>
-                            <label for="tanggalMulaiCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai:</label>
-                            <input type="date" id="tanggalMulaiCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div>
-                            <label for="tanggalAkhirCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Akhir:</label>
-                            <input type="date" id="tanggalAkhirCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="alasanCuti" class="block text-gray-700 text-sm font-bold mb-2">Alasan:</label>
-                            <textarea id="alasanCuti" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
-                        </div>
-                        <div class="md:col-span-2">
-                            <button id="ajukanCutiBtn" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Ajukan Cuti</button>
-                        </div>
-                    </div>
-                    <div class="mt-6">
-                        <h3 class="text-xl font-semibold mb-2">Riwayat Permintaan Cuti</h3>
-                        <div id="cutiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
-                            <p class="text-gray-500">Belum ada riwayat cuti.</p>
-                        </div>
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold mb-2">Riwayat Absensi</h3>
+                    <div id="absensiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
+                        <p class="text-gray-500">Belum ada riwayat absensi.</p>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="invoice" class="dashboard-section hidden">
-                <h1 class="text-4xl font-bold text-gray-800 mb-6">Buat Slip Gaji</h1>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <p class="text-gray-600 mb-4 no-print">Pilih karyawan dan bulan untuk membuat slip gaji.</p>
-                    <div class="mb-4 no-print grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="invoiceKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
-                            <select id="invoiceKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
-                                </select>
-                        </div>
-                        <div>
-                            <label for="bulanGaji" class="block text-gray-700 text-sm font-bold mb-2">Bulan Gaji:</label>
-                            <input type="month" id="bulanGaji" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </div>
-                        <div class="md:col-span-2">
-                             <button id="generateInvoiceBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Buat Slip Gaji</button>
-                        </div>
+        <section id="gaji" class="dashboard-section hidden">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Gaji Karyawan</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="text-gray-600">Bagian ini akan menampilkan informasi gaji per bulan untuk setiap karyawan.</p>
+                <div class="overflow-x-auto mt-4">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                                <th class="py-3 px-6 text-left">Nama</th>
+                                <th class="py-3 px-6 text-left">Jabatan</th>
+                                <th class="py-3 px-6 text-left">Gaji Pokok</th>
+                                <th class="py-3 px-6 text-left">Tunjangan</th>
+                                <th class="py-3 px-6 text-left">Potongan BPJS</th>
+                                <th class="py-3 px-6 text-left">Potongan Lain</th>
+                                <th class="py-3 px-6 text-left">Gaji Bersih</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-600 text-sm font-light" id="gajiTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="cuti" class="dashboard-section hidden">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Izin Libur / Cuti</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="text-gray-600">Bagian ini akan mengelola permintaan dan riwayat izin libur atau cuti karyawan.</p>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="cutiKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                        <select id="cutiKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                            </select>
                     </div>
+                    <div>
+                        <label for="tanggalMulaiCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Mulai:</label>
+                        <input type="date" id="tanggalMulaiCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div>
+                        <label for="tanggalAkhirCuti" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Akhir:</label>
+                        <input type="date" id="tanggalAkhirCuti" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="alasanCuti" class="block text-gray-700 text-sm font-bold mb-2">Alasan:</label>
+                        <textarea id="alasanCuti" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button id="ajukanCutiBtn" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Ajukan Cuti</button>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold mb-2">Riwayat Permintaan Cuti</h3>
+                    <div id="cutiRiwayat" class="max-h-64 overflow-y-auto border p-4 rounded">
+                        <p class="text-gray-500">Belum ada riwayat cuti.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-                    <div id="printArea" class="hidden mt-8">
-                        <div id="invoiceOutput" class="p-6 border-2 border-blue-400 rounded-lg shadow-xl bg-white relative overflow-hidden">
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-50 opacity-50 z-0"></div>
-                            <div class="relative z-10">
-                                <h2 class="text-3xl font-extrabold text-blue-800 mb-2 text-center border-b-2 border-blue-300 pb-2">SLIP GAJI KARYAWAN</h2>
-                                <p class="text-sm text-gray-500 text-center mb-6">Tanggal Cetak: <span id="invoiceTanggalCetak"></span></p>
+        <section id="invoice" class="dashboard-section hidden">
+            <h1 class="text-4xl font-bold text-gray-800 mb-6">Buat Slip Gaji</h1>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <p class="text-gray-600 mb-4 no-print">Pilih karyawan dan bulan untuk membuat slip gaji.</p>
+                <div class="mb-4 no-print grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="invoiceKaryawanSelect" class="block text-gray-700 text-sm font-bold mb-2">Pilih Karyawan:</label>
+                        <select id="invoiceKaryawanSelect" class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                            </select>
+                    </div>
+                    <div>
+                        <label for="bulanGaji" class="block text-gray-700 text-sm font-bold mb-2">Bulan Gaji:</label>
+                        <input type="month" id="bulanGaji" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                    <div class="md:col-span-2">
+                         <button id="generateInvoiceBtn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Buat Slip Gaji</button>
+                    </div>
+                </div>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                    <div>
-                                        <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Nama</strong> : <span id="invoiceNama" class="font-medium text-gray-900"></span></p>
-                                        <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Jabatan</strong> : <span id="invoiceJabatan" class="font-medium text-gray-900"></span></p>
-                                        <p class="text-gray-700"><strong class="w-24 inline-block font-semibold">Bulan Gaji</strong> : <span id="invoiceBulan" class="font-medium text-gray-900"></span></p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-gray-700 mb-1"><strong class="font-semibold">No. HP</strong>: <span id="invoiceNoHp"></span></p>
-                                        <p class="text-gray-700 mb-1"><strong class="font-semibold">Email</strong>: <span id="invoiceEmail"></span></p>
-                                        <p class="text-gray-700"><strong class="font-semibold">Tanggal Masuk</strong>: <span id="invoiceTanggalMasuk"></span></p>
-                                    </div>
+                <div id="printArea" class="hidden mt-8">
+                    <div id="invoiceOutput" class="p-6 border-2 border-blue-400 rounded-lg shadow-xl bg-white relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-50 opacity-50 z-0"></div>
+                        <div class="relative z-10">
+                            <h2 class="text-3xl font-extrabold text-blue-800 mb-2 text-center border-b-2 border-blue-300 pb-2">SLIP GAJI KARYAWAN</h2>
+                            <p class="text-sm text-gray-500 text-center mb-6">Tanggal Cetak: <span id="invoiceTanggalCetak"></span></p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Nama</strong> : <span id="invoiceNama" class="font-medium text-gray-900"></span></p>
+                                    <p class="text-gray-700 mb-1"><strong class="w-24 inline-block font-semibold">Jabatan</strong> : <span id="invoiceJabatan" class="font-medium text-gray-900"></span></p>
+                                    <p class="text-gray-700"><strong class="w-24 inline-block font-semibold">Bulan Gaji</strong> : <span id="invoiceBulan" class="font-medium text-gray-900"></span></p>
                                 </div>
-
-                                <hr class="my-4 border-t-2 border-blue-200">
-
-                                <div class="mb-6 bg-blue-50 p-4 rounded-md">
-                                    <h3 class="text-xl font-bold text-blue-700 mb-3 border-b border-blue-200 pb-2">Penghasilan</h3>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <p class="text-gray-700"><strong class="font-medium">Gaji Pokok</strong></p>
-                                        <p class="font-semibold text-gray-900">Rp <span id="invoiceGajiPokok"></span></p>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-gray-700"><strong class="font-medium">Tunjangan</strong></p>
-                                        <p class="font-semibold text-gray-900">Rp <span id="invoiceTunjangan"></span></p>
-                                    </div>
-                                </div>
-
-                                <div class="mb-6 bg-red-50 p-4 rounded-md">
-                                    <h3 class="text-xl font-bold text-red-700 mb-3 border-b border-red-200 pb-2">Potongan</h3>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <p class="text-gray-700"><strong class="font-medium">Potongan BPJS</strong></p>
-                                        <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganBPJS">0</span></p>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-gray-700"><strong class="font-medium">Potongan Lain-lain</strong></p>
-                                        <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganLain">0</span></p>
-                                    </div>
-                                </div>
-
-                                <hr class="my-4 border-t-4 border-blue-400">
-
-                                <div class="text-right bg-blue-600 text-white p-4 rounded-md">
-                                    <h3 class="text-2xl font-bold">Gaji Bersih: Rp <span id="invoiceGajiBersih"></span></h3>
+                                <div class="text-right">
+                                    <p class="text-gray-700 mb-1"><strong class="font-semibold">No. HP</strong>: <span id="invoiceNoHp"></span></p>
+                                    <p class="text-gray-700 mb-1"><strong class="font-semibold">Email</strong>: <span id="invoiceEmail"></span></p>
+                                    <p class="text-gray-700"><strong class="font-semibold">Tanggal Masuk</strong>: <span id="invoiceTanggalMasuk"></span></p>
                                 </div>
                             </div>
+
+                            <hr class="my-4 border-t-2 border-blue-200">
+
+                            <div class="mb-6 bg-blue-50 p-4 rounded-md">
+                                <h3 class="text-xl font-bold text-blue-700 mb-3 border-b border-blue-200 pb-2">Penghasilan</h3>
+                                <div class="flex justify-between items-center mb-1">
+                                    <p class="text-gray-700"><strong class="font-medium">Gaji Pokok</strong></p>
+                                    <p class="font-semibold text-gray-900">Rp <span id="invoiceGajiPokok"></span></p>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-gray-700"><strong class="font-medium">Tunjangan</strong></p>
+                                    <p class="font-semibold text-gray-900">Rp <span id="invoiceTunjangan"></span></p>
+                                </div>
+                            </div>
+
+                            <div class="mb-6 bg-red-50 p-4 rounded-md">
+                                <h3 class="text-xl font-bold text-red-700 mb-3 border-b border-red-200 pb-2">Potongan</h3>
+                                <div class="flex justify-between items-center mb-1">
+                                    <p class="text-gray-700"><strong class="font-medium">Potongan BPJS</strong></p>
+                                    <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganBPJS">0</span></p>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <p class="text-gray-700"><strong class="font-medium">Potongan Lain-lain</strong></p>
+                                    <p class="font-semibold text-gray-900">Rp <span id="invoicePotonganLain">0</span></p>
+                                </div>
+                            </div>
+
+                            <hr class="my-4 border-t-4 border-blue-400">
+
+                            <div class="text-right bg-blue-600 text-white p-4 rounded-md">
+                                <h3 class="text-2xl font-bold">Gaji Bersih: Rp <span id="invoiceGajiBersih"></span></h3>
+                            </div>
                         </div>
-                        <div class="text-center mt-6 no-print">
-                            <button id="printInvoiceBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cetak Slip Gaji</button>
-                        </div>
+                    </div>
+                    <div class="text-center mt-6 no-print">
+                        <button id="printInvoiceBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cetak Slip Gaji</button>
                     </div>
                 </div>
             </section>
@@ -432,7 +485,13 @@
             const generateInvoiceBtn = document.getElementById('generateInvoiceBtn');
             const invoiceOutput = document.getElementById('invoiceOutput');
             const printInvoiceBtn = document.getElementById('printInvoiceBtn');
-            const printArea = document.getElementById('printArea'); // Ambil elemen printArea
+            const printArea = document.getElementById('printArea');
+
+            // Responsive Sidebar Elements
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
 
             // Dashboard Total Pengeluaran
             const bulanPengeluaranInput = document.getElementById('bulanPengeluaran');
@@ -446,7 +505,7 @@
             const karyawanIndexInput = document.getElementById('karyawanIndex');
             const resetKaryawanFormBtn = document.getElementById('resetKaryawanFormBtn');
 
-            // Form Inputs (pastikan ID ini sesuai dengan HTML)
+            // Form Inputs 
             const inputNamaKaryawan = document.getElementById('namaKaryawan');
             const inputJabatanKaryawan = document.getElementById('jabatanKaryawan');
             const inputAlamatKaryawan = document.getElementById('alamatKaryawan');
@@ -460,7 +519,7 @@
 
             const exportKaryawanBtn = document.getElementById('exportKaryawanBtn');
 
-            // Data Karyawan (Dimulai dengan data dummy, bisa dihapus)
+            // Data Karyawan (Dimulai dengan data dummy)
             let karyawanData = []; 
             karyawanData.push({
                 nama: "Ani",
@@ -509,6 +568,12 @@
 
             // Fungsi untuk menampilkan/menyembunyikan section
             const showSection = (sectionId) => {
+                // Close sidebar on mobile when a section is selected
+                if (window.innerWidth < 768) { // Only for mobile
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                }
+
                 sections.forEach(section => {
                     section.classList.remove('active');
                     section.classList.add('hidden');
@@ -565,7 +630,7 @@
 
             // Inisialisasi awal saat halaman dimuat
             updateDashboardMetrics();
-            showSection('dashboard');
+            showSection('dashboard'); // Tampilkan dashboard awal
 
 
             // Event listener untuk navigasi sidebar
@@ -577,11 +642,23 @@
                 });
             });
 
+            // === Responsive Sidebar Logic ===
+            sidebarToggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            });
+
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            });
+
+
             // === Karyawan Section Functions ===
 
             // Render Data Karyawan
             const renderKaryawanTable = (data) => {
-                karyawanTableBody.innerHTML = ''; // Pastikan tabel dikosongkan sebelum diisi
+                karyawanTableBody.innerHTML = '';
                 if (data.length === 0) {
                     karyawanTableBody.innerHTML = '<tr><td colspan="7" class="py-3 px-6 text-center text-gray-500">Belum ada data karyawan. Tambahkan yang baru di atas!</td></tr>';
                     return;
@@ -601,7 +678,6 @@
                         </td>
                     `;
                 });
-                // Add event listeners to newly created buttons
                 document.querySelectorAll('.edit-btn').forEach(button => {
                     button.addEventListener('click', handleEditKaryawan);
                 });
@@ -629,7 +705,6 @@
                 karyawanFormTitle.textContent = 'Edit Data Karyawan';
                 karyawanIndexInput.value = index;
 
-                // Populate form fields
                 inputNamaKaryawan.value = karyawan.nama;
                 inputJabatanKaryawan.value = karyawan.jabatan;
                 inputAlamatKaryawan.value = karyawan.alamat;
@@ -730,7 +805,7 @@
                         k.potonganBPJS || 0, k.potonganLain || 0
                     ];
                     return values.map(value => {
-                        return typeof value === 'string' && (value.includes(',') || value.includes('\n')) ? `"${value.replace(/"/g, '""')}"` : value;
+                        return typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"')) ? `"${value.replace(/"/g, '""')}"` : value;
                     }).join(',');
                 });
                 
@@ -977,7 +1052,6 @@
 
             // Inisialisasi awal saat halaman dimuat
             updateDashboardMetrics();
-            // renderKaryawanTable(karyawanData); // Panggil ini saat showSection('karyawan')
         });
     </script>
 </body>
